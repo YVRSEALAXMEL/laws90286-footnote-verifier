@@ -1,0 +1,8 @@
+# Lab 2 README fix for the "AxiosError" on file upload in Streamlit Community Cloud.
+[server]
+enableXsrfProtection = false
+enableCORS = false
+maxUploadSize = 50
+
+[theme]
+base = "light"
