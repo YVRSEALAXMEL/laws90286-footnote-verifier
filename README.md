@@ -191,7 +191,7 @@ Run each test case from the deployed app: on the home page choose **Load a bundl
 
 **Files:** the draft for the test case, plus **all three** source PDFs (the bundled loader does this automatically).
 
-> **Recording results:** after each run, download the CSV and note the verdicts in the "Run 1 / Run 2" columns. Each test case should be run at least twice. Variation between runs is expected (the attribution and strength judgements are made by the AI) and is useful material for Assignment 3.
+> **Recorded results:** each test case was run twice on the deployed app on 5 November 2026 (model `gpt-6.1-sol`, default settings). The verdicts below are the tool's actual output. Where the two runs differed in the detail (extra reflection turns, reviewer flags), the difference is noted; none of the final verdicts changed between runs.
 
 ### Test case 1: Strengths (accurate citations)
 **Purpose:** show the tool working on a real extract, including the citation conventions that trip up naive tools.
@@ -199,14 +199,16 @@ Run each test case from the deployed app: on the home page choose **Load a bundl
 
 | fn | Citation | Expected | Run 1 | Run 2 |
 |---|---|---|---|---|
-| 1 | *Brown* (2020) 62 VR 491, [1]–[3] (parallel citation to [2020] VSCA 212) | SUPPORTED | | |
-| 2 | Ibid [6], [29] | SUPPORTED | | |
-| 3 | Ibid [28]–[29] | SUPPORTED | | |
-| 4 | *Brown* (n 1) [6], [56]–[58], [68]–[69] | SUPPORTED | | |
-| 5 | *Kapua* [2023] NSWCCA 14, [111] | SUPPORTED | | |
-| 6 | *Lojovic* [2025] ONCA 319, [42]–[44] (trial judge: 'worse', 'total') | SUPPORTED | | |
-| 7 | *Kapua* (n 5) [113] | SUPPORTED | | |
-| | **AI calls / runtime** | ≈27 (one turn each) to ≈48 | | |
+| 1 | *Brown* (2020) 62 VR 491, [1]–[3] (parallel citation to [2020] VSCA 212) | SUPPORTED | ✅ SUPPORTED (0.99) | ✅ SUPPORTED (0.99) |
+| 2 | Ibid [6], [29] | SUPPORTED | ✅ SUPPORTED (0.99) | ✅ SUPPORTED (0.99) |
+| 3 | Ibid [28]–[29] | SUPPORTED | ✅ SUPPORTED (0.99) | ✅ SUPPORTED (0.99) |
+| 4 | *Brown* (n 1) [6], [56]–[58], [68]–[69] | SUPPORTED | ✅ SUPPORTED (0.98) | ✅ SUPPORTED (0.97) |
+| 5 | *Kapua* [2023] NSWCCA 14, [111] | SUPPORTED | ✅ SUPPORTED (0.99) | ✅ SUPPORTED (0.99) |
+| 6 | *Lojovic* [2025] ONCA 319, [42]–[44] (trial judge: 'worse', 'total') | SUPPORTED | ✅ SUPPORTED (0.99); speaker: trial judge described | ✅ SUPPORTED (0.99) |
+| 7 | *Kapua* (n 5) [113] | SUPPORTED | ✅ SUPPORTED (0.94) | ✅ SUPPORTED (0.87), **2 turns** + reviewer flag (see below) |
+| | **AI calls / runtime** | ≈27 (one turn each) to ≈48 | 27 calls / 157 s | 30 calls / 195 s |
+
+Numbers in brackets are the AI's confidence. **Result: 7/7 correct in both runs.** Every quotation was located by code within the cited pinpoint, the parallel citation was matched, and the Ibid and (n X) chains resolved. **Variation observed (run 2, fn 7):** the AI's element findings said SUPPORTED, but its own overall verdict was CANNOT_DETERMINE, and the reviewer stayed unsatisfied after the hard stop. Its reason: *Kapua* has a dissent (Simpson AJA, at [23] and [26]), and the retrieved excerpts did not show whether [113] (Wilson J) was the majority's reasoning. The code's element gate returned SUPPORTED and recorded the reviewer's doubt as a flag. This is a real legal point (majority versus dissent) that the retrieval does not supply: Davies J's "I agree with Wilson J" at [42] was not among the excerpts.
 
 **What it demonstrates:** footnotes extracted from Word XML; Ibid chains (fn 3 → fn 2 → fn 1) and (n X) resolved by rule; "(2020) 62 VR 491" matched to a file that prints only "[2020] VSCA 212"; ranges and multiple pinpoints; all three paragraph formats; every quotation located by code (see each expander, "Grounding check (i)").
 
@@ -215,13 +217,15 @@ Run each test case from the deployed app: on the home page choose **Load a bundl
 
 | fn | Planted error | Expected | Which layer should catch it | Run 1 | Run 2 |
 |---|---|---|---|---|---|
-| 1 | *Lojovic* [42]–[44]: the trial judge's words ('worse', 'total') attributed to the **Court of Appeal** | MISATTRIBUTED | AI (attribution element). The quotes *are* present, so the quote check passes. | | |
-| 2 | *Kapua* [112]–[113]: a condition can **never** reduce culpability where there is planning ([112]: "may, or may not") | OVERSTATED | AI (strength element) | | |
-| 3 | *Kapua* (n 2) [113]: 'No such requirement operated.' is at [111] | WRONG_PINPOINT | Code (quote located at [111]; rule R5) | | |
-| 4 | *Brown* [6]: 'ordinarily operate to reduce moral culpability' (fabricated) | UNSUPPORTED | Code (rule R3) | | |
-| 5 | *Brown* (n 4) [35]: 'a degree of planning, system, and persistence' (from Kapua [113]) | UNSUPPORTED (wrong case) | Code (rule R3 + "found in Kapua [113]") | | |
-| 6 | Ibid [52]: 'diagnosis is not the key. Impairment is the key' (control) | SUPPORTED | | | |
-| | **AI calls / runtime** | ≈27 | | | |
+| 1 | *Lojovic* [42]–[44]: the trial judge's words ('worse', 'total') attributed to the **Court of Appeal** | MISATTRIBUTED | AI (attribution element). The quotes *are* present, so the quote check passes. | 🔴 MISATTRIBUTED (1.00): "the sentencing judge, whose reasons the Court of Appeal describes" | 🔴 MISATTRIBUTED (0.99) |
+| 2 | *Kapua* [112]–[113]: a condition can **never** reduce culpability where there is planning ([112]: "may, or may not") | OVERSTATED | AI (strength element) | 🟡 OVERSTATED (0.99) | 🟡 OVERSTATED (0.99) |
+| 3 | *Kapua* (n 2) [113]: 'No such requirement operated.' is at [111] | WRONG_PINPOINT | Code (quote located at [111]; rule R5) | 🟠 WRONG_PINPOINT: "Correct pinpoint: [111]" (R5) | 🟠 WRONG_PINPOINT (R5) |
+| 4 | *Brown* [6]: 'ordinarily operate to reduce moral culpability' (fabricated) | UNSUPPORTED | Code (rule R3) | ⛔ UNSUPPORTED (R3: "does not appear anywhere in the cited source") | ⛔ UNSUPPORTED (R3) |
+| 5 | *Brown* (n 4) [35]: 'a degree of planning, system, and persistence' (from Kapua [113]) | UNSUPPORTED (wrong case) | Code (rule R3 + "found in Kapua [113]") | ⛔ UNSUPPORTED (R3: "IS in Kapua v R [2023] NSWCCA 14 [113]") | ⛔ UNSUPPORTED (R3) |
+| 6 | Ibid [52]: 'diagnosis is not the key. Impairment is the key' (control) | SUPPORTED | | ✅ SUPPORTED (0.94), 2 turns | ✅ SUPPORTED (0.85), 2 turns + reviewer flag |
+| | **AI calls / runtime** | ≈27 | | 30 calls / 160 s | 30 calls / 180 s |
+
+**Result: 6/6 correct in both runs.** The suggested fixes were apt; for fn 1, for example: "In R v Lojovic, the sentencing judge reasoned that the appellant's ability to anticipate and manage his manic episodes made his decision to drive 'worse' …". **Variation and weaknesses observed:** (a) the control, fn 6, needed a second turn both times. In run 2 the reviewer stayed unsatisfied, making a fair legal point: the source verifies the *expert's* words, but the draft says *the Court accepted* them, and [52] alone does not show acceptance. (b) The fn 2 fix referred to "*his* mental health condition", but the Kapua applicant is a woman. Suggested fixes are not grounding-checked the way verdicts are.
 
 **What it demonstrates:** the division of labour. Fns 3–5 are caught *deterministically*, so they will be caught on every run. Fns 1–2 need legal judgement about who is speaking and how strong a statement is, which only the AI can supply, so they are the ones to watch for run-to-run variation. Fn 6 checks the tool does not flag everything.
 
@@ -230,24 +234,26 @@ Run each test case from the deployed app: on the home page choose **Load a bundl
 
 | fn | Issue | Ground truth | Expected tool behaviour | Run 1 (toggle off) | Run 2 (toggle off) | Toggle on |
 |---|---|---|---|---|---|---|
-| 1 | *Brown* [6] "described the Verdins principles as 'exceptional'" | UNSUPPORTED | **Expected failure:** 'exceptional' appears in the PDF only inside Jade's "Following paragraph cited by:" blocks quoting *later* cases (e.g. *DPP (Cth) v Heaton* [139]), which the parser files under Brown [6]. The quote check passes, and the judge may pass it. With the toggle on, the quote is not found → UNSUPPORTED (R3). | | | |
-| 2 | *R v Verdins* (2007) 16 VR 269, [32] | CANNOT_DETERMINE (claim is in fact accurate) | Not uploaded → CANNOT_DETERMINE (R1), with **no** AI judgement from memory. Must not be matched to Brown (party-name guard). | | | |
-| 3 | *Brown* (n 1) 493: a VR **page** pinpoint | SUPPORTED; pinpoint unverifiable | Quote found at Brown [2]; pinpoint "unverifiable for this version of the source" (R6), **not** WRONG_PINPOINT. | | | |
-| 4.1 | *Brown* (n 1) [81]–[82] | SUPPORTED | Both quotes found at [81] and [82]. | | | |
-| 4.2 | Strawson, 'Freedom and Resentment' (1962) | CANNOT_DETERMINE | Not uploaded → R1. "language close to Strawson's invitation…" is the author's own argument (shown as "author's own comment", not checked). | | | |
-| | **AI calls / runtime** | | ≈15 | | | |
+| 1 | *Brown* [6] "described the Verdins principles as 'exceptional'" | UNSUPPORTED | **Expected failure:** 'exceptional' appears in the PDF only inside Jade's "Following paragraph cited by:" blocks quoting *later* cases (e.g. *DPP (Cth) v Heaton* [139]), which the parser files under Brown [6]. The quote check passes, and the judge may pass it. With the toggle on, the quote is not found → UNSUPPORTED (R3). | 🔴 MISATTRIBUTED (0.99): "another case quoted (Rozen J in DPP (Cth) v Heaton, [139])"; the quote check passed ('exceptional' found at [6], [89]) | 🔴 MISATTRIBUTED (0.99), same reasoning | ⛔ **UNSUPPORTED** (R3: 'exceptional' not in source) |
+| 2 | *R v Verdins* (2007) 16 VR 269, [32] | CANNOT_DETERMINE (claim is in fact accurate) | Not uploaded → CANNOT_DETERMINE (R1), with **no** AI judgement from memory. Must not be matched to Brown (party-name guard). | ⚪ CANNOT_DETERMINE (R1); no AI judgement | ⚪ CANNOT_DETERMINE (R1) | ⚪ CANNOT_DETERMINE (R1) |
+| 3 | *Brown* (n 1) 493: a VR **page** pinpoint | SUPPORTED; pinpoint unverifiable | Quote found at Brown [2]; pinpoint "unverifiable for this version of the source" (R6), **not** WRONG_PINPOINT. | ✅ SUPPORTED (0.98); pinpoint *unverifiable* (R6); quote found at [2] | ✅ SUPPORTED (0.97); unverifiable (R6) | ✅ SUPPORTED; unverifiable (R6) |
+| 4.1 | *Brown* (n 1) [81]–[82] | SUPPORTED | Both quotes found at [81] and [82]. | ✅ SUPPORTED (0.99); quotes at [81], [82] | ✅ SUPPORTED (0.99) | ✅ SUPPORTED |
+| 4.2 | Strawson, 'Freedom and Resentment' (1962) | CANNOT_DETERMINE | Not uploaded → R1. "language close to Strawson's invitation…" is the author's own argument (shown as "author's own comment", not checked). | ⚪ CANNOT_DETERMINE (R1); "language close to…" shown as the author's own comment | ⚪ CANNOT_DETERMINE (R1) | ⚪ CANNOT_DETERMINE (R1) |
+| | **AI calls / runtime** | | ≈15 | 16 calls / 78 s | 16 calls / 88 s | 15 calls / 89 s (314 chunks) |
+
+**Result:** fns 2–4 behaved exactly as expected in all three runs. **fn 1, the predicted failure, turned out differently:** the *code* layer failed as predicted, because the deterministic quote check "found" 'exceptional' in Brown [6], inside Jade's annotation. But the *AI* judge recognised the passage as Rozen J's words in *DPP (Cth) v Heaton* [139], reproduced in later citing material, and returned MISATTRIBUTED in both runs. So the citation was flagged, though with a different label from the ground truth (UNSUPPORTED). With the experimental toggle on, the annotation is stripped, the quotation is not in Brown at all, and code rule R3 gives exactly UNSUPPORTED. The limitation itself (the parser trusts the file as given) remains. In this test case the AI layer compensated for it, which a reader should not rely on.
 
 **What it demonstrates:** the tool's limits. It trusts the source file as given (fn 1). It refuses to verify from memory (fn 2). It distinguishes an unverifiable pinpoint from a wrong one (fn 3). It splits a two-source footnote and verifies partially (fn 4). **Fn 1 is deliberately not special-cased in the code or prompts.** The optional toggle is a general layout heuristic, off by default, and it shows what a pre-processing step could and could not fix.
 
 ## 8. Cost and AI-call estimates
 
-| Test case | Citation units | AI calls (one turn each) | AI calls (max, 2 turns each) | Embedding requests |
+| Test case | Citation units | AI calls (one turn each) | AI calls (max, 2 turns each) | Embedding requests (observed) |
 |---|---|---|---|---|
-| TC1 | 7 | 27 | ≈48 | ≈14 (first run; 7 when reused) |
-| TC2 | 6 | 27 | ≈39 | ≈13 |
-| TC3 | 5 (3 checkable) | 15 | ≈24 | ≈10 |
+| TC1 | 7 | 27 | ≈48 | 28 (first run: 7 embedding batches + 21 searches); 24 when reused |
+| TC2 | 6 | 27 | ≈39 | 21 |
+| TC3 | 5 (3 checkable) | 15 | ≈24 | 9 (14 with the toggle on, which re-embeds 314 chunks) |
 
-Embedding all three sources is about 445 chunks. Each judge or reviewer call sends roughly 3,000–10,000 input tokens of evidence. The exact token counts for each run are in the AI-call log (results page and .docx report). *Fill in after running: TC1 used ____ input / ____ output tokens; approximate cost $____.*
+**Observed:** TC1 made 27 and 30 calls, TC2 30 and 30, TC3 16, 16 and 15 (toggle on). Runtimes were 78–195 s on Streamlit Community Cloud. Embedding all three sources is 445 chunks. Each judge or reviewer call sends roughly 3,000–10,000 input tokens of evidence. Exact token counts for each run are in the AI-call log (results page and .docx report); the cost appears on the OpenAI usage page of the key used.
 
 ## 9. Known limitations
 - **The tool trusts the source file as given** (TC3 fn 1). Publisher annotations inside a PDF are treated as the judgment's text. The experimental Jade filter is a layout heuristic tuned on BarNet Jade output.
@@ -257,6 +263,8 @@ Embedding all three sources is about 445 chunks. Each judge or reviewer call sen
 - **Only uploaded sources are checked.** Secondary sources and statutes are CANNOT_DETERMINE unless uploaded.
 - **Scanned PDFs are refused**, not OCR'd.
 - **Very long paragraphs** (> 8,000 characters, in practice only Brown [89]) are shown to the judge as their most relevant sub-chunks rather than whole.
+- **The judge doesn't know which reasons are the majority's.** Retrieval returns paragraphs, not the judgment's structure (who wrote which reasons, who agreed). In TC1 run 2 the reviewer doubted whether *Kapua* [113] was the majority view, because Davies J's concurrence at [42] was not among the excerpts. Adding a step that extracts the bench and the authorship of each block of reasons is the obvious next improvement.
+- **Suggested fixes are not grounding-checked.** Verdicts are verified by code, but the AI's rewritten sentence is not. In TC2, one fix used the wrong pronoun for the Kapua applicant.
 - **Runtime** is several minutes for 7 footnotes, because citations are checked one after another so that each can show its live status box.
 
 ## 10. Testing without an API key
