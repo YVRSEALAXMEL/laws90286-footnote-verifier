@@ -6,8 +6,10 @@ import pandas as pd
 import streamlit as st
 
 from reusable_code.api_key import api_key_module
+from reusable_code.password_gate import require_password
 
 st.set_page_config(page_title="Test cases", page_icon="🧪", layout="wide")
+require_password()
 api_key_module()
 
 ARTEFACTS = Path(__file__).resolve().parent.parent / "test_artefacts"

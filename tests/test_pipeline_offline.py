@@ -47,7 +47,7 @@ def _by_unit(at):
 def test_page_stops_without_api_key(monkeypatch):
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.setattr("reusable_code.api_key.os.getenv", lambda name, default=None: None)
-    at = AppTest.from_file(str(HOME)).run()
+    at = AppTest.from_file(str(HOME), default_timeout=60).run()
     assert not at.exception
     assert any("Enter your OpenAI API key" in i.value for i in at.info)
     assert not at.button or all(b.label != "Run verification" for b in at.button)
@@ -134,3 +134,20 @@ def test_transient_error_is_retried_once_and_persistent_failure_is_contained(mon
     assert results["6.1"]["rule"] == "AI step failed"            # contained, run finished
     log = at.session_state["run"]["call_log"]
     assert sum(1 for c in log if not c["ok"]) == 3                # 1 blip + 2 attempts for fn 6
+
+
+def test_password_gate():
+    """With APP_PASSWORD set in Streamlit secrets, nothing else shows until it is entered."""
+    at = AppTest.from_file(str(HOME), default_timeout=60)
+    at.secrets["APP_PASSWORD"] = "test-pass"
+    at.run()
+    assert not at.exception
+    assert at.title[0].value.startswith("🔒")
+    assert not any(b.label == "Run verification" for b in at.button)
+    at.text_input[0].input("wrong")
+    at.button[0].click().run()
+    assert any("Incorrect password" in e.value for e in at.error)
+    at.text_input[0].input("test-pass")
+    at.button[0].click().run()
+    assert at.session_state["password_ok"] is True
+    assert not at.title[0].value.startswith("🔒")

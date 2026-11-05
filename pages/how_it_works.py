@@ -3,10 +3,12 @@
 import streamlit as st
 
 from reusable_code.api_key import api_key_module
+from reusable_code.password_gate import require_password
 from reusable_code.chunking import MAX_CHUNK_TOKENS
 from reusable_code.verdict_rules import CONFIDENCE_THRESHOLD, VERDICTS, WHO_IS_SPEAKING
 
 st.set_page_config(page_title="How it works", page_icon="🧭", layout="wide")
+require_password()
 api_key_module()
 
 st.title("🧭 How it works")

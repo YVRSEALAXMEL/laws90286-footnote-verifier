@@ -27,6 +27,7 @@ from dotenv import load_dotenv
 
 from reusable_code.ai_client import DEFAULT_MODEL, EFFORT_LEVELS, AIError
 from reusable_code.api_key import api_key_module, require_api_key
+from reusable_code.password_gate import require_password
 from reusable_code.docx_footnotes import extract_draft
 from reusable_code.pdf_ingest import guess_citation, ingest_pdf
 from reusable_code.pipeline import run_verification
@@ -34,6 +35,7 @@ from reusable_code.results_view import show_results
 
 load_dotenv()   # local development only: reads OPENAI_API_KEY from .env if present
 st.set_page_config(page_title="Footnote–Source Verifier", page_icon="📚", layout="wide")
+require_password()   # optional shared password (only if APP_PASSWORD is set in Streamlit secrets)
 
 ARTEFACTS = Path(__file__).parent / "test_artefacts"
 TEST_CASES = {

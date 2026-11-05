@@ -2,7 +2,9 @@
 
 **LAWS90286 Assignment 2 · Streamlit application**
 
-**Deployed app:** `https://<YOUR-APP-NAME>.streamlit.app` ← *replace after deploying (see [Deployment](#deployment-streamlit-community-cloud))*
+**Deployed app:** https://laws90286-footnote-verifier.streamlit.app
+
+**To use it:** enter the app password (supplied with the assignment submission), then your own OpenAI API key in the sidebar (**API Key Input** → **Update API Key**).
 
 Upload a draft legal research paper (.docx with real Word footnotes) and PDFs of the cases it cites. For every footnote, the app checks whether the cited source, **at the cited pinpoint**, actually supports the proposition, and reports a verdict, the supporting passage, who in the judgment is speaking, and a suggested fix.
 
@@ -117,6 +119,7 @@ pages/how_it_works.py       pipeline diagram, verdict logic, limitations
 pages/test_cases.py         the three test cases, expected results, artefact downloads
 reusable_code/
   api_key.py                credentials sidebar module (adapted; see §11)
+  password_gate.py          optional shared app password (set only as a Streamlit secret, never in the code)
   ai_client.py              ask_ai(): Responses API + strict JSON, client from session key, call counter/log, one retry
   docx_footnotes.py         step 1
   pdf_ingest.py             step 2: layout extraction, boilerplate, paragraph detection, scan detection, optional Jade filter
@@ -155,7 +158,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements-dev.txt
 cp .env.example .env          # then put your own key in .env (never commit it)
-python -m pytest -q           # 37 tests, no API key needed
+python -m pytest -q           # 38 tests, no API key needed
 streamlit run home.py
 ```
 
@@ -172,10 +175,10 @@ streamlit run home.py
 `pysqlite3-binary` is installed only on Linux (an environment marker in `requirements.txt`), and the `try/except` at the top of `home.py` skips the sqlite swap elsewhere. tiktoken downloads its `cl100k_base` file on first use; if that fails, the app falls back to a word-based token estimate and says so.
 
 ### Deployment (Streamlit Community Cloud)
-1. Push the repository to GitHub as a **private** repo. Check that `.env` is **not** in the commit (`git status` must not list it).
+1. Push the repository to GitHub. Check that `.env` is **not** in the commit (`git status` must not list it). The repository is public so that Streamlit Community Cloud can host it as a public app; the teacher (`stoneman-mls`) has also been added as a collaborator.
 2. At share.streamlit.io → **Create app** → choose the repo, branch `main`, main file `home.py`.
-3. **Advanced settings → Python version: 3.13** (the version the tests were run on; 3.12 also works).
-4. **Do not add any secrets.** Users enter their own OpenAI key in the sidebar.
+3. **Advanced settings → Python version: 3.13** (the version the tests were run on; Streamlit's default is newer).
+4. **Advanced settings → Secrets:** add only `APP_PASSWORD = "..."` (the shared app password). **Never add an OpenAI key**: users enter their own in the sidebar. Deleting the `APP_PASSWORD` secret turns the password gate off without any code change.
 5. Deploy, then paste the URL at the top of this README.
 
 Notes: `.streamlit/config.toml` contains the Lab 2 fix for the upload "AxiosError". The Lab 2 `protobuf==3.20.1` pin is deliberately **not** used: streamlit 1.64 requires protobuf ≥ 5.26.1, and chromadb 1.5.x does not need the pin.
@@ -192,7 +195,7 @@ Run each test case from the deployed app: on the home page choose **Load a bundl
 
 ### Test case 1: Strengths (accurate citations)
 **Purpose:** show the tool working on a real extract, including the citation conventions that trip up naive tools.
-**Steps:** 1. Enter API key → Update. 2. *Load a bundled test case* → **TC1 · Accurate citations (strengths)**. 3. Check the ingestion preview: **7 footnotes**; Brown 89 paragraphs (N.), Kapua 143 (N.), Lojovic 71 ([N]); all readable. 4. Run verification.
+**Steps:** 1. Enter the app password, then your OpenAI API key → Update API Key. 2. *Load a bundled test case* → **TC1 · Accurate citations (strengths)**. 3. Check the ingestion preview: **7 footnotes**; Brown 89 paragraphs (N.), Kapua 143 (N.), Lojovic 71 ([N]); all readable. 4. Run verification.
 
 | fn | Citation | Expected | Run 1 | Run 2 |
 |---|---|---|---|---|
@@ -257,7 +260,7 @@ Embedding all three sources is about 445 chunks. Each judge or reviewer call sen
 - **Runtime** is several minutes for 7 footnotes, because citations are checked one after another so that each can show its live status box.
 
 ## 10. Testing without an API key
-`python -m pytest -q` runs 37 tests with no key and no cost:
+`python -m pytest -q` runs 38 tests with no key and no cost:
 - `tests/test_parsing.py`: footnote extraction (TC1 has 7; Ibid/(n X) text; apostrophes ≠ quotes), paragraph detection for all three formats, Kapua [111] contains "No such requirement operated", Lojovic [43] contains "worse", Brown [52] contains "Impairment is the key", "ordinarily operate to reduce" is **not** in Brown, no chunk exceeds 400 tokens, `para_text[char_start:char_end] == chunk_text` for every sub-chunk, a generated image-only PDF is flagged unreadable, the Jade toggle, quote and pinpoint checks.
 - `tests/test_pipeline_offline.py`: the whole app via Streamlit's AppTest, with a **scripted stand-in** for the OpenAI API. Every request's JSON schema is checked against OpenAI strict-mode rules, and every reply is validated against its schema. These tests check the plumbing and the code rules (≥5 calls, Ibid/(n X) resolution, R1, R3 with "found in Kapua [113]", R5, R6, retry and failure handling). **They do not measure legal accuracy**; the stand-in's "judgements" are keyword rules.
 
@@ -265,5 +268,5 @@ Embedding all three sources is about 445 chunks. Each judge or reviewer call sen
 - **Credentials module**: adapted from https://github.com/stoneman-mls/openai_credentials (LAWS90286). Changes: password field, the key is never printed, rendered as a function on every run, `st.stop()` until a key is set, local `.env` fallback for development only.
 - **Class code**: day 5 `ask_ai` (Responses API with strict JSON); Lab 2 `_plan_queries` / `_search` / `_analyse` / `evaluate_objective` / `application.py` loop, `st.status` boxes and the grounding idea; Lab 1 if-then gating; the Lab 2 README deployment fixes.
 - **semchunk** (MIT licence, Isaacus / Umar Butler) for sub-chunking oversized paragraphs. Its AI-chunking mode is not used.
-- **Test sources**: BarNet Jade copies of *Brown v The Queen* [2020] VSCA 212 and *Kapua v R* [2023] NSWCCA 14, and the CanLII copy of *R v Lojovic*, 2025 ONCA 319. They are included for educational testing only, with user email addresses redacted. This repository is private.
+- **Test sources**: BarNet Jade copies of *Brown v The Queen* [2020] VSCA 212 and *Kapua v R* [2023] NSWCCA 14, and the CanLII copy of *R v Lojovic*, 2025 ONCA 319. They are included solely as test artefacts for assessment, with user email addresses redacted.
 - The application of the technology to the citation-checking process (step design, verdict logic and precedence, citation rules, test cases) is my own work.
